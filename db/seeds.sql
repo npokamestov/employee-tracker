@@ -5,7 +5,7 @@ VALUES
     ('Marketing'),
     ('Software Engineering');
 
-INSERT INTO roles (title, salary, department_id)
+INSERT INTO role (title, salary, department_id)
 VALUES
     ('(CFO)Chief Financial Officer', 200000, 1),
     ('Finance Director', 130000, 1),
