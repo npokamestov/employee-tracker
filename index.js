@@ -1,18 +1,18 @@
 const inquirer = require('inquirer');
 const table = require('console.table');
-const connection = require('./db/database');
+// const connection = require('./db/database');
 
-connection.connect(err => {
-    if (err) throw err;
-    console.log('Welcome to Employee Tracker');
-    console.log('Connected to database as id ' + connection.threadId);
-    crudChoice();
-});
+// connection.connect(err => {
+//     if (err) throw err;
+//     console.log('Welcome to Employee Tracker');
+//     console.log('Connected to database as id ' + connection.threadId);
+//     crudChoice();
+// });
 
-const endConnection = () => {
-    connection.end();
-    console.log("Bye");
-};
+// const endConnection = () => {
+//     connection.end();
+//     console.log("Bye");
+// };
 
 const crudChoice = () => {
     inquirer.prompt([

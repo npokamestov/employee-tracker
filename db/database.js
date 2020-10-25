@@ -10,9 +10,9 @@ const connection = mysql.createConnection({
     database: 'employee_tracker'
 });
 
-connection.connect(err => {
-    if (err) throw err;
-    console.log('connected as id ' + connection.threadId + '\n');
+connection.connect((err) => {
+    if (err) throw err
+    console.log('connected as id ' + connection.threadId);
 });
 
 module.exports = connection;

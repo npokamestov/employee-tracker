@@ -8,7 +8,7 @@ router.get('/employeesdata', (req, res) => {
     const params = [];
     connection.query(sql, params, (err, rows) => {
         if (err) {
-            res.status(400).json({ error: err.message });
+            res.status(500).json({ error: err.message });
             return;
         }
         res.json({
