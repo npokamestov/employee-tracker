@@ -1,5 +1,4 @@
 const connection = require('../db/database');
-// const inputCheck = require('../utils/inputCheck');
 
 const createDepartment = (name) => {
     const sql = `INSERT INTO department (name)

@@ -1,5 +1,4 @@
 const connection = require('../db/database');
-// const inputCheck = require('../utils/inputCheck');
 
 const createEmployee = (body) => {
     const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)

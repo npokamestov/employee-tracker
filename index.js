@@ -1,10 +1,10 @@
 const inquirer = require('inquirer');
-const table = require('console.table');
 const connection = require('./db/database');
+const table = require('console.table');
 
 const { createDepartment, deleteDepartment} = require('./queries/departmentQueries');
 const { createRole, deleteRole } = require('./queries/roleQueries');
-const { createEmployee, deleteEmployee, updateEmpManager, updateEmpRole } = require('./queries/employeeQueries');
+const { createEmployee, updateEmpRole, updateEmpManager, deleteEmployee } = require('./queries/employeeQueries');
 
 
 connection.connect(err => {
@@ -163,7 +163,16 @@ const createDepartmentPrompt = () =>{
         {
             type: 'input',
             name: 'departmentName',
-            message: 'Enter a department name'
+            message: 'Enter a department name',
+            validate: departmentName => {
+                if (departmentName) {
+                    return true;
+                }
+                else {
+                    console.log('Please enter a department name!');
+                    return false;
+                }
+            }
         }
     ])
     .then (answers => {
@@ -182,12 +191,30 @@ const createRolePrompt = () => {
             {
                 type: 'input',
                 name: 'roleTitle',
-                message: 'Enter a Role Title'
+                message: 'Enter a Role Title',
+                validate: roleTitle => {
+                    if (roleTitle) {
+                        return true;
+                    }
+                    else {
+                        console.log('Please enter a role title!');
+                        return false;
+                    }
+                }
             },
             {
                 type: 'input',
                 name: 'roleSalary',
-                message: 'Enter the Role Salary'
+                message: 'Enter the Role Salary',
+                validate: roleSalary => {
+                    if (roleSalary) {
+                        return true;
+                    }
+                    else {
+                        console.log('Please enter the role\'s salary');
+                        return false;
+                    }
+                }
             },
             {
                 type: 'list',
@@ -235,12 +262,30 @@ const createEmployeePrompt = () => {
             {
                 type: 'input',
                 name: 'employeeFirstName',
-                message: 'Enter the Employee\'s First Name'
+                message: 'Enter the Employee\'s First Name',
+                validate: employeeFirstName => {
+                    if (employeeFirstName) {
+                        return true;
+                    }
+                    else {
+                        console.log('Please enter the employee\'s first name!');
+                        return false;
+                    }
+                }
             },
             {
                 type: 'input',
                 name: 'employeeLastName',
-                message: 'Enter the Employee\'s Last Name'
+                message: 'Enter the Employee\'s Last Name',
+                validate: employeeLastName => {
+                    if (employeeLastName) {
+                        return true;
+                    }
+                    else {
+                        console.log('Please enter the employee\'s last name!');
+                        return false;
+                    }
+                }
             },
             {
                 type: 'list',

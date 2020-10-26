@@ -1,5 +1,4 @@
 const connection = require('../db/database');
-// const inputCheck = require('../utils/inputCheck');
 
 const createRole = ( body ) => {
     const sql = `INSERT INTO role (title, salary, department_id)
