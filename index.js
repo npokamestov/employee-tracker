@@ -1,18 +1,24 @@
 const inquirer = require('inquirer');
 const table = require('console.table');
-// const connection = require('./db/database');
+const connection = require('./db/database');
 
-// connection.connect(err => {
-//     if (err) throw err;
-//     console.log('Welcome to Employee Tracker');
-//     console.log('Connected to database as id ' + connection.threadId);
-//     crudChoice();
-// });
+const { createDepartment, deleteDepartment} = require('./queries/departmentQueries');
+const { createRole, deleteRole } = require('./queries/roleQueries');
+const { createEmployee, deleteEmployee, updateEmpManager, updateEmpRole } = require('./queries/employeeQueries');
 
-// const endConnection = () => {
-//     connection.end();
-//     console.log("Bye");
-// };
+
+connection.connect(err => {
+    if (err) {
+        console.log(err)
+    }
+    console.log('Welcome to Employee Tracker');
+    crudChoice();
+});
+
+const endConnection = () => {
+    connection.end();
+    console.log("Bye!");
+};
 
 const crudChoice = () => {
     inquirer.prompt([
@@ -26,43 +32,43 @@ const crudChoice = () => {
             type: 'list',
             name: 'createChoices',
             message: 'What would you like to create?',
-            choices: ['A new Department', 'A new Role', 'A new Employee'],
-            when: (answers) => answers.crudChoice === 'Create'
+            choices: ['A new Department', 'A new Role', 'A new Employee', 'Go Back'],
+            when: (answers) => answers.crudChoices === 'Create'
         },
         {
             type: 'list',
             name: 'readChoices',
             message: 'What would you like to read?',
-            choices: ['All Departments', 'All Roles', 'All Employee\'s', 'Budget by Department'],
-            when: (answers) => answers.crudChoice === 'Read'
+            choices: ['All Departments', 'All Roles', 'All Employee\'s', 'Budget by Department', 'Go Back'],
+            when: (answers) => answers.crudChoices === 'Read'
         },
         {
             type:'list',
             name: 'updateChoices',
             message: 'What would you like to Update?',
-            choices: ['An Employee\'s Role', 'An Employee\'s manager'],
-            when: (answers) => answers.crudChoice === 'Update'
+            choices: ['An Employee\'s Role', 'An Employee\'s manager', 'Go Back'],
+            when: (answers) => answers.crudChoices === 'Update'
         },
         {
             type: 'list',
             name: 'deleteChoices',
             message: 'What would you like to delete?',
-            choices: ['A Department', 'A Role', 'An Employee'],
-            when: (answers) => answers.crudChoice === 'Delete'
+            choices: ['A Department', 'A Role', 'An Employee', 'Go Back'],
+            when: (answers) => answers.crudChoices === 'Delete'
         }
     ])
-    .then(answers => {
-        if (answers.createChoices === 'A new Department') {
-            createDepartment();
+    .then(answer => {
+        if (answer.createChoices === 'A new Department') {
+            createDepartmentPrompt();
         }
-        else if (answers.createChoices === 'A new Role') {
-            createRole();
+        else if (answer.createChoices === 'A new Role') {
+            createRolePrompt();
         }
-        else if (answers.createChoices === 'A new Employee') {
-            createEmployee();
+        else if (answer.createChoices === 'A new Employee') {
+            createEmployeePrompt();
         }
-        else if (answers.readChoices === 'All Departments') {
-            const sql = `SELECT id AS "Departement ID", name AS "Department Name" FROM department`;
+        else if (answer.readChoices === 'All Departments') {
+            const sql = `SELECT id AS "Department ID", name AS "Department Name" FROM department`;
             const params = [];
             connection.promise().query(sql,params)
             .then ( ([rows, fields]) => {
@@ -70,11 +76,11 @@ const crudChoice = () => {
             })
             .then(crudChoice)
         }
-        else if (answers.readChoices === 'All Roles') {
+        else if (answer.readChoices === 'All Roles') {
             const sql = `SELECT role.id AS "Roles ID", 
-                        role.title AS "Role Title,
+                        role.title AS "Role Title",
                         department.name AS "Department Name",
-                        role.salary AS "Salary",
+                        role.salary AS "Salary"
                         FROM role
                         LEFT JOIN department
                         ON role.department_id = department.id`;
@@ -85,62 +91,74 @@ const crudChoice = () => {
             })
             .then(crudChoice)
         }
-        else if (answers.readChoices === 'All Employee\'s') {
-            const sql = `SELECT employee.id "Employee's ID",
-                        emp.first_name AS "First Name",
-                        emp.last_name AS "Last Name",
+        else if (answer.readChoices === 'All Employee\'s') {
+            const sql = `SELECT e.id AS "Employee's ID",
+                        e.first_name AS "First Name",
+                        e.last_name AS "Last Name",
                         role.title AS "Role Title",
                         department.name AS "Department",
                         role.salary AS "Salary",
-                        CONCAT(man.first_name, ' ', man.last_name) AS "Manager Name"
-                        FROM employee emp
-                        LEFT JOIN role ON emp.role_id = role.id
-                        LEFT JOIN employee man ON man.id = emp.manager_id
+                        CONCAT(m.first_name, ' ', m.last_name) AS "Manager Name"
+                        FROM employee e
+                        LEFT JOIN role ON e.role_id = role.id
+                        LEFT JOIN employee m ON m.id = e.manager_id
                         LEFT JOIN department ON role.department_id = department.id`;
             const params = [];
-            connnection.promise().query(sql, params)
-            .then( ([rows, fields]) => {
+            connection.promise().query(sql,params)
+            .then ( ([rows, fields]) => {
                 console.table(rows)
             })
             .then(crudChoice)
         }
-        else if (answers.readChoices === 'Budget by Department') {
+        else if (answer.readChoices === 'Budget by Department') {
             const sql = `SELECT department.name AS "Department Name",
                         SUM(salary) AS "Department Budget",
                         COUNT(role.title) AS "Employee Count"
                         FROM employee
                         LEFT JOIN role ON employee.role_id = role.id
-                        LEFT JOIN department on role.department_id = department.id
+                        LEFT JOIN department ON role.department_id = department.id
                         GROUP BY department.name`;
             const params = [];
             connection.promise().query(sql, params)
             .then( ([rows, fields]) => {
-                console.table(rows);
+                console.table(rows)
             })
-            then(crudChoice)
+            .then(crudChoice)
         }
-        else if (answers.updateChoices === 'An Employee\'s Role') {
-            updateEmpRole();
+        else if (answer.updateChoices === 'An Employee\'s Role') {
+            updateEmpRolePrompt();
         }
-        else if (answers.updateChoices === 'An Employee\'s manager') {
-            updateEmpManager();
+        else if (answer.updateChoices === 'An Employee\'s manager') {
+            updateEmpManagerPrompt();
         }
-        else if (answers.deleteChoices === 'A Department') {
-            deleteDepartment();
+        else if (answer.deleteChoices === 'A Department') {
+            deleteDepartmentPrompt();
         }
-        else if (answers.deleteChoices === 'A Role') {
-            deleteRole();
+        else if (answer.deleteChoices === 'A Role') {
+            deleteRolePrompt();
         }
-        else if (answers.deleteChoices === 'An Employee') {
-            deleteEmployee();
+        else if (answer.deleteChoices === 'An Employee') {
+            deleteEmployeePrompt();
         }
-        else if (answers.crudChoices === 'Leave') {
+        else if (answer.createChoices === 'Go Back') {
+            crudChoice();
+        }
+        else if (answer.readChoices === 'Go Back') {
+            crudChoice();
+        }
+        else if (answer.updateChoices === 'Go Back') {
+            crudChoice();
+        }
+        else if (answer.deleteChoices === 'Go Back') {
+            crudChoice();
+        }
+        else if (answer.crudChoices === 'Leave') {
             endConnection();
         }
     });
 };
 
-const createDepartment = () =>{
+const createDepartmentPrompt = () =>{
     inquirer.prompt([
         {
             type: 'input',
@@ -155,10 +173,10 @@ const createDepartment = () =>{
     });
 };
 
-const createRole = () => {
-    connection.query(`SELECT id AS department_id, name AS department_name FROM department`,
+const createRolePrompt = () => {
+    connection.query('SELECT id as department_id, name as department_name FROM department',
     function(err,rows) {
-        if (err) throw err;
+        if (err) console.log(err)
         const departmentList = rows.map(Object => Object.department_name);
         inquirer.prompt([
             {
@@ -172,9 +190,9 @@ const createRole = () => {
                 message: 'Enter the Role Salary'
             },
             {
-                type: 'input',
+                type: 'list',
                 name: 'roleDepartment',
-                message: 'Select the Department for this Role',
+                message: 'Select a Department for this Role',
                 choices: departmentList
             }
         ])
@@ -193,23 +211,23 @@ const createRole = () => {
     });
 };
 
-const createEmployee = () => {
-    connection.query(`SELECT id AS role_id,
-                    titel AS role_title,
+const createEmployeePrompt = () => {
+    connection.query(`SELECT id as role_id,
+                    title as role_title,
                     null as manager_id,
                     null as manager_name
                     FROM role
                     UNION
-                    SELECT null AS role_id,
-                    null AS role_title,
-                    id AS manager_id,
-                    CONCAT(first_name, ' ', last_name) AS manager_name
+                    SELECT null as role_id,
+                    null as role_title,
+                    id as manager_id,
+                    CONCAT(first_name, ' ', last_name) as manager_name
                     FROM employee`,
     function(err,rows) {
-        if (err) throw err;
+        if (err) console.log(err);
         const uncutRoleList = rows.map(Object => Object.role_title);
         const roleList = uncutRoleList.filter(element => element !=null);
-        const uncutMangerList = rows.map(Object => Object.manger_name);
+        const uncutMangerList = rows.map(Object => Object.manager_name);
         const managerList = uncutMangerList.filter(element => element !=null);
         managerList.unshift('None');
 
@@ -239,7 +257,7 @@ const createEmployee = () => {
         ])
         .then(answers => {
             let roleRow = rows.find(Object => Object.role_title === answers.employeeRole);
-            let roleId = roleRow.row_id;
+            let roleId = roleRow.role_id;
             let managerId = null;
             if (answers.managerName === 'None') {
                 managerId = null
@@ -252,7 +270,7 @@ const createEmployee = () => {
                 'first_name': answers.employeeFirstName,
                 'last_name': answers.employeeLastName,
                 'role_id': roleId,
-                'mamanger_id': managerId
+                'manager_id': managerId
             };
             createEmployee(newEmployee);
             console.log(answers.employeeFirstName + ' ' + answers.employeeLastName + ' added to the employee table!');
@@ -261,8 +279,8 @@ const createEmployee = () => {
     });
 };
 
-const updateEmpRole = () => {
-    connection.query(`SELECT is AS role_id,
+const updateEmpRolePrompt = () => {
+    connection.query(`SELECT id AS role_id,
                     title AS role_title,
                     null AS employee_id,
                     null AS employee_name
@@ -297,7 +315,7 @@ const updateEmpRole = () => {
         .then(answers => {
             let roleRow = rows.find(Object => Object.role_title === answers.roleSelect);
             let roleId = roleRow.role_id;
-            let employeeRow = row.find(Object => Object.employee_name === answers.employeeSelect);
+            let employeeRow = rows.find(Object => Object.employee_name === answers.employeeSelect);
             let employeeId = employeeRow.employee_id;
             const newRole = {
                 'employee_id': employeeId,
@@ -310,7 +328,7 @@ const updateEmpRole = () => {
     });
 };
 
-const updateEmpManager = () => {
+const updateEmpManagerPrompt = () => {
     connection.query(`SELECT id AS employee_id,
                     CONCAT(first_name, ' ', last_name) AS name
                     FROM employee`,
@@ -339,7 +357,7 @@ const updateEmpManager = () => {
                 }
             ])
             .then(managerInfo => {
-                let employeeRow = row.find(Object => Object.name === employeeInfo.employee);
+                let employeeRow = rows.find(Object => Object.name === employeeInfo.employee);
                 let employeeId = employeeRow.employee_id;
                 let managerId = null;
                 if (managerInfo.manager === "None") {managerId = null}
@@ -351,7 +369,7 @@ const updateEmpManager = () => {
                     'manager_id': managerId,
                     'employee_id': employeeId
                 };
-                updatedManager(updatedManager);
+                updateEmpManager(updatedManager);
                 console.log(employeeInfo.employee + '\'s manager changed to '+ managerInfo.manager)
                 crudChoice();
             });
@@ -359,7 +377,7 @@ const updateEmpManager = () => {
     });
 };
 
-const deleteDepartment = () => {
+const deleteDepartmentPrompt = () => {
     console.log('Warning!!! Deleting a department will delete the roles under it! Employee\'s will have to be manually updated.');
     connection.query(`SELECT id AS department_id,
                     name AS department_name
@@ -377,7 +395,7 @@ const deleteDepartment = () => {
             }
         ])
         .then(answers => {
-            let departmentRow = row.find(Object => Object.department_name === answers.departmentSelect);
+            let departmentRow = rows.find(Object => Object.department_name === answers.departmentSelect);
             let departmentId = departmentRow.department_id;
             deleteDepartment(departmentId);
             console.log(answers.departmentSelect + ' has been deleted!');
@@ -386,9 +404,9 @@ const deleteDepartment = () => {
     });
 };
 
-const deleteRole = () => {
+const deleteRolePrompt = () => {
     console.log('Warning!!! Employee\'s will have to be manually updated!');
-    connnection.query(`SELECT id, title FROM role`,
+    connection.query(`SELECT id, title FROM role`,
     function(err, rows) {
         if (err) throw err;
         const roleList = rows.map(Object => Object.title);
@@ -397,7 +415,7 @@ const deleteRole = () => {
             {
                 type: 'list',
                 name: 'roleSelect',
-                messages: 'Select a Role to DELETE',
+                message: 'Select a Role to DELETE',
                 choices: roleList
             }
         ])
@@ -411,13 +429,13 @@ const deleteRole = () => {
     });
 };
 
-const deleteEmployee = () => {
+const deleteEmployeePrompt = () => {
     connection.query(`SELECT id AS employee_id,
                     CONCAT(first_name, ' ', last_name) AS name
                     FROM employee`,
     function(err, rows) {
         if (err) throw err;
-        const employeeList = row.map(Object => Object.name);
+        const employeeList = rows.map(Object => Object.name);
 
         inquirer.prompt([
             {
@@ -431,7 +449,7 @@ const deleteEmployee = () => {
             let employeeRow = rows.find(Object =>  Object.name === answers.employeeSelect);
             let employeeId = employeeRow.employee_id;
             deleteEmployee(employeeId);
-            console.log(answers.employee + ' has been deleted!');
+            console.log(answers.employeeSelect + ' has been deleted!');
             crudChoice();
         });
     });
